@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "crm-students"
+version = "0.1.0"
+description = "crm system that helps to manage sales in educational centers"
+authors = ["Elizaveta"]
+readme = "README.md"
+packages = [{include = "crm"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.111.1"
+pydantic = "^2.8.2"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
