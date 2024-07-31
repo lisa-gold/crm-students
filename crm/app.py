@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi_login import LoginManager
 from datetime import timedelta
-from crm.models import User
+from crm.models import User, Contact, Comment
 import crm.database as db
 from crm.validation import validate_user
 
@@ -96,7 +96,7 @@ def delete_user(user_login, user=Depends(manager)):
     if user.login == user_login or "ADMIN" in user.roles:
         # todo: add confirmation !
         db.delete_user(user_login)
-        return {"detail": "user updated successfully"}
+        return {"detail": "user deleted successfully"}
     raise HTTPException(status_code=403,
                         detail={'error': 'if not admin, you can delete\
                             only your account'})
@@ -104,19 +104,49 @@ def delete_user(user_login, user=Depends(manager)):
 
 # CONTACTS
 @app.post("/contacts")
-def add_contact(data, user=Depends(manager)):
+def add_contact(data: Contact, user=Depends(manager)):
     return db.add_contact(data)
 
 
 @app.get("/contacts")
-def get_contacts():
+def get_contacts(user=Depends(manager)):
     return db.get_contacts()
 
 
 @app.get("/contacts/{id}")
-def get_contact(id):
+def get_contact(id, user=Depends(manager)):
     contact = db.get_contacts_by_id(id)
     if contact:
         return contact
     raise HTTPException(status_code=404,
                         detail={'error': f'no contact with id = {id}'})
+
+
+@app.put("/contacts/{id}")
+def update_contacts(id, data: Contact, user=Depends(manager)):
+    if db.update_contact(id, data):
+        return data
+    return {'error': 'contact is not updated'}
+
+
+@app.delete("/contacts/{id}")
+def delete_contact(id, user=Depends(manager)):
+    # todo: confirmation
+    if db.delete_contact(id):
+        return {'detail': 'contact is deleted successfully'}
+    return {'detail': 'contact is NOT deleted'}
+
+
+# COMMENTS
+@app.post("/contacts/{contact_id}/comments")
+def add_comment(contact_id, data: Comment, user=Depends(manager)):
+    if db.add_comment(contact_id, data):
+        return data
+    return {'detail': 'comment NOT added'}
+
+
+@app.delete("/contacts/{contact_id}/comments")
+def delete_comment(contact_id, data: Comment, user=Depends(manager)):
+    if db.delete_comment(contact_id, data):
+        return {'detail': 'comment is deleted successfully'}
+    return {'detail': 'comment is NOT deleted'}

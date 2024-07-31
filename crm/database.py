@@ -42,11 +42,12 @@ def update_user(login, data):
     user = get_user_by_login(login)
     user.update(data)
     # todo: update in db
+    return True
 
 
 def delete_user(login):
     # todo: delete user
-    pass
+    return True
 
 
 # CONTACTS
@@ -69,25 +70,30 @@ def update_contact(id, data):
     contact = get_contacts_by_id(id)
     contact.update(data)
     # todo: update in db
+    return True
 
 
-def delete_contact(login):
+def delete_contact(id):
     # todo: archive contact
-    pass
+    return True
 
 
 # COMMENTS IN CONTACTS
 def add_comment(contact_id, data):
     contact = get_contacts_by_id(contact_id)
+    if not contact:
+        return False
     contact.update({"comments": contact.comments + [data]})
-    update_contact(contact_id, contact)
+    return update_contact(contact_id, contact)
 
 
 def delete_comment(contact_id, comment):
     contact = get_contacts_by_id(contact_id)
+    if not contact:
+        return False
     try:
         index = contact.comments.index(comment)
         contact.comments.pop(index)
-        update_contact(contact_id, contact)
+        return update_contact(contact_id, contact)
     except ValueError:
         return False
