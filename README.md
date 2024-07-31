@@ -1,7 +1,7 @@
 # crm-students
 CRM system that helps to manage sales in educational centers
 
-# Example
+### Example
 <pre>
 let responseData = fetch("/auth/login",
                          {method: "POST",
@@ -18,4 +18,7 @@ fetch("/get_users",
       }
       });
 </pre>
+
+### Update user
+Login is not updatable!
 

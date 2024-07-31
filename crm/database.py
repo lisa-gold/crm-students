@@ -32,4 +32,17 @@ def add_user(user):
 
 
 def get_users():
+    # todo: get users from db
     return [ADMIN, USER]
+
+
+def update_user(login, data):
+    # todo: update user
+    user = get_user_by_login(login)
+    user.update(data)
+    # todo: update in db
+
+
+def delete_user(login):
+    # todo: delete user
+    pass
