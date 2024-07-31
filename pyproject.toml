@@ -10,6 +10,8 @@ packages = [{include = "crm"}]
 python = "^3.10"
 fastapi = "^0.111.1"
 pydantic = "^2.8.2"
+fastapi-login = "^1.10.1"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"

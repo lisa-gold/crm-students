@@ -4,25 +4,27 @@ from datetime import datetime, date
 
 class User(BaseModel):
     login: str
-    firstName: str
-    lastName: str
-    email: str
-    phone: str
-    roles: list
+    password: str
+    firstName: str | None = None
+    lastName: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    roles: list | None = None
 
 
-class Reminder:
-    pass
+class Reminder(BaseModel):
+    description: str
+    # todo: add what is needed
 
 
-class Comment:
+class Comment(BaseModel):
     comment: str
     dataTime: datetime | None = None
     addedBy: User | None = None
     details: str | None = None
 
 
-class WeekDays:
+class WeekDays(BaseModel):
     Sunday: bool = False
     Monday: bool = False
     Tuesday: bool = False
@@ -32,7 +34,7 @@ class WeekDays:
     Saturday: bool = False
 
 
-class Group:
+class Group(BaseModel):
     id: int
     name: str
     teacher: str
@@ -49,7 +51,7 @@ class Group:
     autoArchive: bool = False
 
 
-class Payment:
+class Payment(BaseModel):
     id: int
     date: datetime
     type: str
