@@ -100,3 +100,23 @@ def delete_user(user_login, user=Depends(manager)):
     raise HTTPException(status_code=403,
                         detail={'error': 'if not admin, you can delete\
                             only your account'})
+
+
+# CONTACTS
+@app.post("/contacts")
+def add_contact(data, user=Depends(manager)):
+    return db.add_contact(data)
+
+
+@app.get("/contacts")
+def get_contacts():
+    return db.get_contacts()
+
+
+@app.get("/contacts/{id}")
+def get_contact(id):
+    contact = db.get_contacts_by_id(id)
+    if contact:
+        return contact
+    raise HTTPException(status_code=404,
+                        detail={'error': f'no contact with id = {id}'})

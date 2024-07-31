@@ -15,6 +15,7 @@ USER = {
 }
 
 
+# USERS
 def get_user_by_login(login):
     # todo: get user from db
     # todo: password encoding
@@ -46,3 +47,47 @@ def update_user(login, data):
 def delete_user(login):
     # todo: delete user
     pass
+
+
+# CONTACTS
+def get_contacts():
+    return []  # todo: get them
+
+
+def get_contacts_by_id(id):
+    contact = {}  # todo: get it
+    return contact
+
+
+def add_contact(data):
+    # todo: add
+    print("contact added")
+    return True
+
+
+def update_contact(id, data):
+    contact = get_contacts_by_id(id)
+    contact.update(data)
+    # todo: update in db
+
+
+def delete_contact(login):
+    # todo: archive contact
+    pass
+
+
+# COMMENTS IN CONTACTS
+def add_comment(contact_id, data):
+    contact = get_contacts_by_id(contact_id)
+    contact.update({"comments": contact.comments + [data]})
+    update_contact(contact_id, contact)
+
+
+def delete_comment(contact_id, comment):
+    contact = get_contacts_by_id(contact_id)
+    try:
+        index = contact.comments.index(comment)
+        contact.comments.pop(index)
+        update_contact(contact_id, contact)
+    except ValueError:
+        return False
