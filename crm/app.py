@@ -72,3 +72,8 @@ def register(user_data: User, user_admin=Depends(manager)):
 @app.get("/users")
 def get_users(user=Depends(manager)):
     return db.get_users()
+
+
+@app.get("/users/{user_login}")
+def get_user(user_login, user=Depends(manager)):
+    return db.get_user_by_login(user_login)
