@@ -14,6 +14,8 @@ class User(BaseModel):
 
 class Reminder(BaseModel):
     description: str
+    when: datetime | None = None
+    status: bool | None = True  # True - active, False - done
     # todo: add what is needed
 
 
@@ -37,7 +39,7 @@ class WeekDays(BaseModel):
 class Group(BaseModel):
     id: int
     name: str
-    teacher: str
+    teacher: str | None = None
     whatsApp: str | None = None
     slack: str | None = None
     skype: str | None = None
@@ -45,8 +47,8 @@ class Group(BaseModel):
     expectedFinishDate: date | None = None
     lessonsDays: WeekDays
     webinarDays: WeekDays
-    studentList: list
-    reminders: list
+    studentsList: list | None = []
+    reminders: list | None = []
     active: bool = False
     autoArchive: bool = False
 
@@ -71,16 +73,16 @@ class Contact(BaseModel):
     source: str | None = None
     status: str | None = None
     comments: list | None = []
-    reminder: Reminder | None = None
+    reminders: list | None = []
 
 
 class Student(Contact):
     teudatZeut: int
     group: Group
-    groupHistory: list
-    courseFee: int
-    payments: list
-    documents: bool
+    groupHistory: list | None = []
+    courseFee: int | None = None
+    payments: list | None = None
+    documents: bool | None = False
 
 
 class Lecturer(BaseModel):

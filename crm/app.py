@@ -3,7 +3,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi_login import LoginManager
 from datetime import timedelta
-from crm.models import User, Contact, Comment
+from crm.models import (
+                        User, Contact, Comment,
+                        Student, Reminder, Group
+                        )
 import crm.database as db
 from crm.validation import validate_user
 
@@ -115,7 +118,7 @@ def get_contacts(user=Depends(manager)):
 
 @app.get("/contacts/{id}")
 def get_contact(id, user=Depends(manager)):
-    contact = db.get_contacts_by_id(id)
+    contact = db.get_contact_by_id(id)
     if contact:
         return contact
     raise HTTPException(status_code=404,
@@ -137,6 +140,21 @@ def delete_contact(id, user=Depends(manager)):
     return {'detail': 'contact is NOT deleted'}
 
 
+# NEW (convert contact to student)
+@app.post("/contacts/{id}/convert")
+def convert_contact_to_student(id, data: Student, user=Depends(manager)):
+    contact = db.get_contact_by_id(id)
+    if not contact:
+        raise HTTPException(status_code=404,
+                            detail={'error': f'no contact with id = {id}'})
+    student = contact
+    student.update(data.__dict__)
+    if db.add_student(data):
+        db.delete_contact(id)
+        return {'detail': 'contact is converted to student successfully'}
+    return {'error': 'contact is NOT converted'}
+
+
 # COMMENTS
 @app.post("/contacts/{contact_id}/comments")
 def add_comment(contact_id, data: Comment, user=Depends(manager)):
@@ -150,3 +168,119 @@ def delete_comment(contact_id, data: Comment, user=Depends(manager)):
     if db.delete_comment(contact_id, data):
         return {'detail': 'comment is deleted successfully'}
     return {'detail': 'comment is NOT deleted'}
+
+
+# REMINDER todo: delete reminders
+@app.post("/contacts/{contact_id}/reminders")
+def add_reminder_to_contact(contact_id, data: Reminder, user=Depends(manager)):
+    if db.add_reminder_to_contact(contact_id, data):
+        return {'detail': 'reminder is added successfully'}
+    return {'detail': 'reminder is NOT added'}
+
+
+# STUDENTS
+@app.post("/students")
+def add_student(data: Student, user=Depends(manager)):
+    return db.add_student(data)
+
+
+@app.get("/students")
+def get_students(user=Depends(manager)):
+    return db.get_students()
+
+
+@app.get("/students/{id}")
+def get_student(id, user=Depends(manager)):
+    contact = db.get_student_by_id(id)
+    if contact:
+        return contact
+    raise HTTPException(status_code=404,
+                        detail={'error': f'no student with id = {id}'})
+
+
+@app.put("/students/{id}")
+def update_student(id, data: Student, user=Depends(manager)):
+    if db.update_student(id, data):
+        return data
+    return {'error': 'student is not updated'}
+
+
+@app.put("/students/{id}/move/{group_id}")
+def move_student(id, group_id, user=Depends(manager)):
+    if db.add_student_to_group(group_id, id):
+        return {'detail': 'student is moved successfully'}
+
+    return {'error': 'student is not moved'}
+
+
+@app.delete("/students/{id}")
+def delete_student(id, user=Depends(manager)):
+    # todo: confirmation
+    if db.delete_student(id):
+        return {'detail': 'student is deleted successfully'}
+    return {'detail': 'student is NOT deleted'}
+
+
+# REMINDER todo: delete reminders
+@app.post("/students/{student_id}/reminders")
+def add_reminder_to_student(student_id, data: Reminder, user=Depends(manager)):
+    if db.add_reminder_to_student(student_id, data):
+        return {'detail': 'reminder is added successfully'}
+    return {'detail': 'reminder is NOT added'}
+
+
+# GROUPS
+@app.post("/groups")
+def add_group(data: Group, user=Depends(manager)):
+    return db.add_group(data)
+
+
+@app.get("/groups")
+def get_groups(user=Depends(manager)):
+    return db.get_groups()
+
+
+@app.get("/groups/{id}")
+def get_group(id, user=Depends(manager)):
+    group = db.get_group_by_id(id)
+    if group:
+        return group
+    raise HTTPException(status_code=404,
+                        detail={'error': f'no group with id = {id}'})
+
+
+@app.put("/groups/{id}")
+def update_group(id, data: Group, user=Depends(manager)):
+    if db.update_group(id, data):
+        return data
+    return {'error': 'group is not updated'}
+
+
+@app.put("/groups/{id}/students/{student_id}")
+def add_student_to_group(id, student_id, user=Depends(manager)):
+    if db.add_student_to_group(id, student_id):
+        return {'detail': 'student is added to the group successfully'}
+    return {'error': 'student is not added to the group'}
+
+
+@app.delete("/groups/{id}/students/{student_id}")
+def delete_student_from_group(id, student_id, user=Depends(manager)):
+    if db.remove_student_from_group(id, student_id):
+        return {'detail': 'student is removed from the group successfully'}
+    return {'error': 'student is not removed from the group'}
+
+
+# REMINDER todo: delete reminders
+@app.post("/groups/{id}/reminders")
+def add_reminder_to_group(id, data: Reminder, user=Depends(manager)):
+    if db.add_reminder_to_group(id, data):
+        return {'detail': 'reminder is added successfully'}
+    return {'detail': 'reminder is NOT added'}
+
+
+@app.delete("/groups/{id}")
+def delete_group(id, user=Depends(manager)):
+    # todo: confirmation
+    if db.delete_group(id):
+        return {'detail': 'group is deleted successfully'}
+    return {'detail': 'group is NOT deleted'}
