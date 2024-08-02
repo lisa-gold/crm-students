@@ -66,7 +66,8 @@ def register(user_data: User, user_admin=Depends(manager)):
     if "ADMIN" in user_admin.roles:
         if not user_data.login or not user_data.password:
             raise HTTPException(status_code=403,
-                                detail={'error': 'login and password are needed'})
+                                detail={'error': 'login and password\
+                                        are needed'})
         if db.add_user(user_data):
             return user_data
         raise HTTPException(status_code=403,
@@ -114,7 +115,10 @@ def delete_user(user_login, user=Depends(manager)):
 # CONTACTS
 @app.post("/contacts")
 def add_contact(data: Contact, user=Depends(manager)):
-    return db.add_contact(data)
+    if db.add_contact(data):
+        return {'detail': 'contact is added successfully'}
+    raise HTTPException(status_code=403,
+                        detail={'error': 'contact is NOT added'})
 
 
 @app.get("/contacts")
@@ -131,10 +135,10 @@ def get_contact(id, user=Depends(manager)):
                         detail={'error': f'no contact with id = {id}'})
 
 
-@app.put("/contacts/{id}")
+@app.patch("/contacts/{id}")
 def update_contacts(id, data: Contact, user=Depends(manager)):
     if db.update_contact(id, data):
-        return data
+        return {'detail': 'contact is updated successfully'}
     return {'error': 'contact is not updated'}
 
 

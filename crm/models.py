@@ -37,8 +37,8 @@ class WeekDays(BaseModel):
 
 
 class Group(BaseModel):
-    id: int
-    name: str
+    id: int | None = None
+    name: str | None = None
     teacher: str | None = None
     whatsApp: str | None = None
     slack: str | None = None
@@ -47,8 +47,8 @@ class Group(BaseModel):
     expectedFinishDate: date | None = None
     lessonsDays: WeekDays
     webinarDays: WeekDays
-    studentsList: list | None = []
-    reminders: list | None = []
+    studentsList: list | None = None
+    reminders: list | None = None
     active: bool = False
     autoArchive: bool = False
 
@@ -63,26 +63,26 @@ class Payment(BaseModel):
 
 
 class Contact(BaseModel):
-    id: int
-    name: str
+    id: int | None = None
+    name: str | None = None
     surname: str | None = None
     email: str | None = None
-    phone: str
+    phone: str | None = None
     city: str | None = None
     course: str | None = None
     source: str | None = None
-    status: str | None = None
-    comments: list | None = []
-    reminders: list | None = []
+    status: str | None = 'LEAD'
+    comments: list | None = None
+    reminders: list | None = None
 
 
 class Student(Contact):
-    teudatZeut: int
-    group: Group
-    groupHistory: list | None = []
+    teudatZeut: int | None = None
+    group: Group | None = None
+    groupHistory: list | None = None
     courseFee: int | None = None
     payments: list | None = None
-    documents: bool | None = False
+    documents: bool | None = None
 
 
 class Lecturer(BaseModel):

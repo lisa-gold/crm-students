@@ -1,4 +1,4 @@
-from crm.models import User
+from crm.models import User, Contact
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -47,7 +47,7 @@ def get_users():
 def update_user(login, data):
     try:
         DB['users'].update_one({'login': login},
-                            {'$set': data.dict(exclude_unset=True)})
+                               {'$set': data.dict(exclude_unset=True)})
         return True
     except Exception as e:
         print(e)
@@ -55,37 +55,53 @@ def update_user(login, data):
 
 
 def delete_user(login):
-    # todo: delete user
     DB['users'].find_one_and_delete({'login': login})
     return True
 
 
 # CONTACTS
 def get_contacts():
-    return []  # todo: get them
+    return list(DB['contacts'].find({'status': {'$nin': ['ARCHIVE']}},
+                                    {'_id': False}))
 
 
 def get_contact_by_id(id):
-    contact = {}  # todo: get it
-    return contact
+    contact = DB['contacts'].find_one({'id': int(id)}, {'_id': False})
+    print(contact)
+    if contact:
+        return Contact(**contact)
+    return None
 
 
 def add_contact(data):
-    # todo: add
+    if get_contact_by_id(data.id):
+        return False
+    if not data.id:
+        data.id = (DB['contacts'].find_one(sort=[('id', -1)])['id']\
+                   if DB['contacts'].find_one(sort=[('id', -1)]) else 0) + 1
+    DB['contacts'].insert_one(data.__dict__)
     print("contact added")
     return True
 
 
 def update_contact(id, data):
-    contact = get_contact_by_id(id)
-    contact.update(data)
-    # todo: update in db
-    return True
+    try:
+        DB['contacts'].update_one({'id': int(id)},
+                                  {'$set': data.dict(exclude_unset=True)})
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 def delete_contact(id):
-    # todo: archive contact
-    return True
+    try:
+        DB['contacts'].update_one({'id': int(id)},
+                                  {'$set': {'status': "ARCHIVE"}})
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 # COMMENTS IN CONTACTS
