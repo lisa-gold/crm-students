@@ -77,7 +77,7 @@ def add_contact(data):
     if get_contact_by_id(data.id):
         return False
     if not data.id:
-        data.id = (DB['contacts'].find_one(sort=[('id', -1)])['id']\
+        data.id = (DB['contacts'].find_one(sort=[('id', -1)])['id']
                    if DB['contacts'].find_one(sort=[('id', -1)]) else 0) + 1
     DB['contacts'].insert_one(data.__dict__)
     print("contact added")
@@ -94,7 +94,7 @@ def update_contact(id, data):
         return False
 
 
-def delete_contact(id):
+def archive_contact(id):
     try:
         DB['contacts'].update_one({'id': int(id)},
                                   {'$set': {'status': "ARCHIVE"}})
@@ -102,6 +102,11 @@ def delete_contact(id):
     except Exception as e:
         print(e)
         return False
+
+
+def delete_contact(id):
+    DB['users'].find_one_and_delete({'id': int(id)})
+    return True
 
 
 # COMMENTS IN CONTACTS

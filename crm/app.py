@@ -145,7 +145,7 @@ def update_contacts(id, data: Contact, user=Depends(manager)):
 @app.delete("/contacts/{id}")
 def delete_contact(id, user=Depends(manager)):
     # todo: confirmation
-    if db.delete_contact(id):
+    if db.archive_contact(id):
         return {'detail': 'contact is deleted successfully'}
     return {'detail': 'contact is NOT deleted'}
 
