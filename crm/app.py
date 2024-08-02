@@ -64,6 +64,9 @@ def logout():
 def register(user_data: User, user_admin=Depends(manager)):
     # random user cannot register
     if "ADMIN" in user_admin.roles:
+        if not user_data.login or not user_data.password:
+            raise HTTPException(status_code=403,
+                                detail={'error': 'login and password are needed'})
         if db.add_user(user_data):
             return user_data
         raise HTTPException(status_code=403,
@@ -83,10 +86,13 @@ def get_user(user_login, user=Depends(manager)):
     return db.get_user_by_login(user_login)
 
 
-@app.put("/users/{user_login}")
-def update_user(user_login, data, user=Depends(manager)):
-    # login is not updatable !!!
+@app.patch("/users/{user_login}")
+def update_user(user_login, data: User, user=Depends(manager)):
+    # login is not updatable
     if user.login == user_login or "ADMIN" in user.roles:
+        if data.login and data.login != user_login:
+            raise HTTPException(status_code=403,
+                                detail={'error': 'login is not updatable'})
         db.update_user(user_login, data)
         return {"detail": "user updated successfully"}
     raise HTTPException(status_code=403,
@@ -97,7 +103,7 @@ def update_user(user_login, data, user=Depends(manager)):
 @app.delete("/users/{user_login}")
 def delete_user(user_login, user=Depends(manager)):
     if user.login == user_login or "ADMIN" in user.roles:
-        # todo: add confirmation !
+        # todo: add confirmation
         db.delete_user(user_login)
         return {"detail": "user deleted successfully"}
     raise HTTPException(status_code=403,

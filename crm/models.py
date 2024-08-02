@@ -3,13 +3,13 @@ from datetime import datetime, date
 
 
 class User(BaseModel):
-    login: str
-    password: str
+    login: str | None = None
+    password: str | None = None
     firstName: str | None = None
     lastName: str | None = None
     email: str | None = None
     phone: str | None = None
-    roles: list | None = None
+    roles: list | None = ['USER']
 
 
 class Reminder(BaseModel):

@@ -1,52 +1,62 @@
 from crm.models import User
+import os
+from dotenv import load_dotenv
+from pymongo import MongoClient
 
 
-ADMIN = {'login': 'toto',
-         'password': '123',
-         "firstName": "to",
-         "lastName": "surname",
-         "roles": ["ADMIN", "USER"]}
-USER = {
-    "login": "fefe",
-    "password": "321",
-    "firstName": "fe",
-    "lastName": "surname",
-    "roles": ["USER"]
-}
+load_dotenv()
+
+
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
+DB_NAME = os.getenv("DB")
+
+
+def get_db():
+    try:
+        cluster = MongoClient(f'mongodb+srv://{USERNAME}:{PASSWORD}@{DB_NAME}')
+        return cluster['crm']
+    except Exception as e:
+        print('No connection with the db', e)
+
+
+DB = get_db()
 
 
 # USERS
 def get_user_by_login(login):
-    # todo: get user from db
     # todo: password encoding
-    user = USER
-    if login == user['login']:
+    user = DB['users'].find_one({"login": login})
+    if user:
         return User(**user)
     return None
 
 
 def add_user(user):
-    # todo: add user to db
-    # check if unique
+    if get_user_by_login(user.login):
+        return False
+    DB['users'].insert_one(user.__dict__)
     print('user added')
     return True
 
 
 def get_users():
-    # todo: get users from db
-    return [ADMIN, USER]
+    return list(DB['users'].find({}, {'_id': False}))
 
 
 def update_user(login, data):
-    # todo: update user
-    user = get_user_by_login(login)
-    user.update(data)
-    # todo: update in db
-    return True
+    try:
+        DB['users'].update_one({'login': login},
+                            {'$set': data.dict(exclude_unset=True)})
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 def delete_user(login):
     # todo: delete user
+    DB['users'].find_one_and_delete({'login': login})
     return True
 
 

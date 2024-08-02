@@ -1,2 +1,6 @@
 def validate_user(input, user):
-    return input.password == user.password
+    try:
+        return input.password == user.password
+    except:
+        print('Password is missing')
+        return False
