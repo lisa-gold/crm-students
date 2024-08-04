@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi_login import LoginManager
-from datetime import timedelta
+from datetime import timedelta, datetime
 from crm.models import (
                         User, Contact, Comment,
                         Student, Reminder, Group
@@ -150,6 +150,9 @@ def delete_contact(id, user=Depends(manager)):
     return {'detail': 'contact is NOT deleted'}
 
 
+# todo: get contacts from archive
+
+
 # NEW (convert contact to student)
 @app.post("/contacts/{id}/convert")
 def convert_contact_to_student(id, data: Student, user=Depends(manager)):
@@ -157,9 +160,11 @@ def convert_contact_to_student(id, data: Student, user=Depends(manager)):
     if not contact:
         raise HTTPException(status_code=404,
                             detail={'error': f'no contact with id = {id}'})
-    student = contact
-    student.update(data.__dict__)
-    if db.add_student(data):
+    student = contact.__dict__
+    student.update(data.dict(exclude_unset=True))
+    student = Student(**student)
+    print(student)
+    if db.add_student(student):
         db.delete_contact(id)
         return {'detail': 'contact is converted to student successfully'}
     return {'error': 'contact is NOT converted'}
@@ -168,14 +173,30 @@ def convert_contact_to_student(id, data: Student, user=Depends(manager)):
 # COMMENTS
 @app.post("/contacts/{contact_id}/comments")
 def add_comment(contact_id, data: Comment, user=Depends(manager)):
-    if db.add_comment(contact_id, data):
+    if not db.get_contact_by_id(contact_id):
+        raise HTTPException(status_code=404,
+                            detail={'error': f'no contact with\
+                                              id = {contact_id}'})
+    data.addedBy = user.__dict__
+    data.dateTime = datetime.now()
+    if db.add_comment_to_contact(contact_id, data):
         return data
-    return {'detail': 'comment NOT added'}
 
 
-@app.delete("/contacts/{contact_id}/comments")
-def delete_comment(contact_id, data: Comment, user=Depends(manager)):
-    if db.delete_comment(contact_id, data):
+@app.delete("/contacts/{contact_id}/comments/{comment_id}")
+def delete_comment(contact_id, comment_id, user=Depends(manager)):
+    contact = db.get_contact_by_id(contact_id)
+    if not contact:
+        raise HTTPException(status_code=404,
+                            detail={'error': f'no contact with\
+                                              id = {contact_id}'})
+
+    if int(comment_id) >= len(contact.comments):
+        raise HTTPException(status_code=404,
+                            detail={'error': f'no comments with\
+                                              id = {comment_id}'})
+
+    if db.delete_comment_from_contact(contact_id, comment_id):
         return {'detail': 'comment is deleted successfully'}
     return {'detail': 'comment is NOT deleted'}
 

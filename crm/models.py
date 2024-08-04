@@ -21,7 +21,7 @@ class Reminder(BaseModel):
 
 class Comment(BaseModel):
     comment: str
-    dataTime: datetime | None = None
+    dateTime: datetime | None = None
     addedBy: User | None = None
     details: str | None = None
 
@@ -48,7 +48,7 @@ class Group(BaseModel):
     lessonsDays: WeekDays
     webinarDays: WeekDays
     studentsList: list | None = None
-    reminders: list | None = None
+    reminders: list[Reminder] | None = []
     active: bool = False
     autoArchive: bool = False
 
@@ -72,8 +72,8 @@ class Contact(BaseModel):
     course: str | None = None
     source: str | None = None
     status: str | None = 'LEAD'
-    comments: list | None = None
-    reminders: list | None = None
+    comments: list[Comment] | None = []
+    reminders: list[Reminder] | None = []
 
 
 class Student(Contact):
@@ -81,7 +81,7 @@ class Student(Contact):
     group: Group | None = None
     groupHistory: list | None = None
     courseFee: int | None = None
-    payments: list | None = None
+    payments: list[Payment] | None = []
     documents: bool | None = None
 
 
