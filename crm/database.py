@@ -152,9 +152,12 @@ def delete_comment_from_contact(contact_id, comment_id):
                                                 'comment': comment.comment,
                                                 'details': comment.details,
                                                 'dateTime': comment.dateTime
-                                                }}})
+                                                }
+                                             }
+                                   }
+                                  )
         return True
-    except ValueError:
+    except IndexError:
         print('this comment is not found')
         return False
 
@@ -162,8 +165,16 @@ def delete_comment_from_contact(contact_id, comment_id):
 # REMINDER
 def add_reminder_to_contact(contact_id, data):
     contact = get_contact_by_id(contact_id)
-    contact.update({'reminders': contact.reminders + [data]})
-    return update_contact(contact_id, contact)
+    if not contact:
+        print(f'contact with id = {contact_id} not found')
+        return False
+    try:
+        DB['contacts'].update_one({'id': int(contact_id)},
+                                  {'$push': {'reminders': data.__dict__}})
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 # STUDENTS
@@ -173,7 +184,7 @@ def get_students():
 
 
 def get_student_by_id(id):
-    student = DB['students'].find_one({"id": id})
+    student = DB['students'].find_one({"id": int(id)}, {'_id': False})
     if student:
         return Student(**student)
     return None
@@ -184,7 +195,7 @@ def add_student(data):
             DB['students'].find_one({'teudatZeut': int(data.teudatZeut)}):
         print(f'Student with TZ {data.teudatZeut} already exists')
         return False
-    if get_student_by_id(data.id):
+    if data.id and get_student_by_id(data.id):
         print(f'Student with id = {data.id} already exists')
         return False
     if not data.id:
@@ -196,17 +207,19 @@ def add_student(data):
             id = max(id, DB['contacts'].find_one(sort=[('id', -1)])['id'] + 1)
 
         data.id = id
+    group_id = data.group
+    data.group = None
     DB['students'].insert_one(data.__dict__)
-    if data.group:
-        add_student_to_group(data.group.id, data.id)
+    if group_id:
+        add_student_to_group(group_id, data.id)
     print('student added')
     return True
 
 
 def update_student(id, data):
     student = get_student_by_id(id)
-    if student['group'] != data.group or\
-            student['groupHistory'] != data.groupHistory:
+    if student.group != data.group or\
+            student.groupsHistory != data.groupsHistory:
         print("You cannot change student's groups this way.\
                Use '/students/{student_id}/move/{group_id}'")
         return False
@@ -224,6 +237,9 @@ def delete_student(id):
     try:
         DB['students'].update_one({'id': int(id)},
                                   {'$set': {'status': "ARCHIVE"}})
+        student = get_student_by_id(id)
+        if student.group:
+            remove_student_from_group(student.group, id)
         return True
     except Exception as e:
         print(e)
@@ -233,18 +249,26 @@ def delete_student(id):
 # REMINDER
 def add_reminder_to_student(student_id, data):
     student = get_student_by_id(student_id)
-    student.update({'reminders': student.reminders + [data]})
-    return update_student(student_id, student)
+    if not student:
+        print(f'student with id = {student_id} not found')
+        return False
+    try:
+        DB['students'].update_one({'id': int(student_id)},
+                                  {'$push': {'reminders': data.__dict__}})
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 # GROUPS
 def get_groups():
-    return list(DB['groups'].find({'status': {'$nin': ['ARCHIVE']}},
+    return list(DB['groups'].find({'active': True},
                                   {'_id': False}))
 
 
 def get_group_by_id(id):
-    group = DB['groups'].find_one({"id": id})
+    group = DB['groups'].find_one({"id": int(id)}, {'_id': False})
     if group:
         return Group(**group)
     return None
@@ -257,11 +281,11 @@ def add_group(data):
 
     if not data.id:
         data.id = DB['groups'].find_one(sort=[('id', -1)])['id'] + 1\
-            if DB['groups'].find_one(sort=[('id', -1)]) else 0
+            if DB['groups'].find_one(sort=[('id', -1)]) else 1
 
     DB['groups'].insert_one(data.__dict__)
-    for student in data.studentsList:
-        add_student_to_group(data.id, student.id)
+    for student_id in data.studentsList:
+        add_student_to_group(data.id, student_id)
     print('group added')
     return True
 
@@ -285,42 +309,45 @@ def update_group(id, data):
 
 def add_student_to_group(group_id, student_id):
     student = get_student_by_id(student_id)
-    group_new = get_group_by_id(group_id)
-    group_history = student.groupsHistory
-    if student.group:
-        group_old = get_group_by_id(student.group.id)
-        index = group_old.studentsList.find(student)
-        group_old.studentsList.pop(index)
-        DB['groups'].update_one({'id': int(group_old.id)},
-                                {'$set':
-                                    {'studentsList': group_old.studentsList}})
-        group_history += [student.group]
+    if not student:
+        print(f'No student with id = {student_id}')
+        return False
+    group = get_group_by_id(group_id)
+    if not group:
+        print(f'No group with id = {group_id}')
+        return False
 
-    DB['students'].update_one({'id': int(student.id)},
-                              {'$set': {'group': group_new,
-                                        'groupsHistory': group_history}})
-    DB['groups'].update_one({'id': int(group_new.id)},
-                            {'$set':
-                                {'studentsList':
-                                    group_new.studentsList + [student]}})
+    if student.group:
+        if student.group == int(group_id):
+            print('Cannot move to the same group')
+            return False
+        DB['groups'].update_one({'id': int(student.group)},
+                                {'$pull':
+                                    {'studentsList': int(student_id)}})
+        DB['students'].update_one({'id': int(student_id)},
+                                  {'$push': {'groupsHistory': int(student.group)}})
+
+    DB['students'].update_one({'id': int(student_id)},
+                              {'$set': {'group': int(group_id)}})
+    
+    DB['groups'].update_one({'id': int(group_id)},
+                            {'$push':
+                                {'studentsList': int(student_id)}})
     return True
 
 
 def remove_student_from_group(group_id, student_id):
-    student = get_student_by_id(student_id)
-    group = get_group_by_id(group_id)
-    index = group.studentsList.find(student)
-    group.studentsList.pop(index)
+
     # update in the db group
     DB['groups'].update_one({'id': int(group_id)},
-                            {'$set': {'studentsList': group.studentsList}})
+                            {'$pull': {'studentsList': int(student_id)}})
 
     DB['students'].update_one({'id': int(student_id)},
                               {'$set':
                                   {'group': None,
-                                   'groupsHistory':
-                                       student.group_history + [student.group],
-                                   'status': 'ARCHIVE'}})
+                                   'status': 'ARCHIVE'},
+                               '$push':
+                                   {'groupsHistory': int(group_id)}})
     return True
 
 
@@ -337,5 +364,13 @@ def delete_group(id):
 # REMINDER
 def add_reminder_to_group(id, data):
     group = get_group_by_id(id)
-    group.update({'reminders': group.reminders + [data]})
-    return update_group(id, group)
+    if not group:
+        print(f'group with id = {id} not found')
+        return False
+    try:
+        DB['groups'].update_one({'id': int(id)},
+                               {'$push': {'reminders': data.__dict__}})
+        return True
+    except Exception as e:
+        print(e)
+        return False

@@ -45,9 +45,9 @@ class Group(BaseModel):
     skype: str | None = None
     startDate: date | None = None
     expectedFinishDate: date | None = None
-    lessonsDays: WeekDays
-    webinarDays: WeekDays
-    studentsList: list | None = None
+    lessonsDays: WeekDays | None = None
+    webinarDays: WeekDays | None = None
+    studentsList: list[int] | None = []
     reminders: list[Reminder] | None = []
     active: bool = False
     autoArchive: bool = False
@@ -78,8 +78,8 @@ class Contact(BaseModel):
 
 class Student(Contact):
     teudatZeut: int | None = None
-    group: Group | None = None
-    groupHistory: list | None = None
+    group: int | None = None
+    groupsHistory: list[int] | None = []
     courseFee: int | None = None
     payments: list[Payment] | None = []
     documents: bool | None = None

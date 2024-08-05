@@ -17,6 +17,7 @@ load_dotenv()
 SECRET = os.getenv('SECRET')
 
 
+# TODO: change unsuccessful answers to "raise" HTTP response
 app = FastAPI()
 manager = LoginManager(SECRET, token_url='/auth/login')
 
@@ -201,9 +202,15 @@ def delete_comment(contact_id, comment_id, user=Depends(manager)):
     return {'detail': 'comment is NOT deleted'}
 
 
-# REMINDER todo: delete reminders
+# REMINDER todo: delete reminders and add status DONE
 @app.post("/contacts/{contact_id}/reminders")
 def add_reminder_to_contact(contact_id, data: Reminder, user=Depends(manager)):
+    contact = db.get_contact_by_id(contact_id)
+    if not contact:
+        raise HTTPException(status_code=404,
+                            detail={'error': f'no contact with\
+                                              id = {contact_id}'})
+
     if db.add_reminder_to_contact(contact_id, data):
         return {'detail': 'reminder is added successfully'}
     return {'detail': 'reminder is NOT added'}
@@ -212,7 +219,10 @@ def add_reminder_to_contact(contact_id, data: Reminder, user=Depends(manager)):
 # STUDENTS
 @app.post("/students")
 def add_student(data: Student, user=Depends(manager)):
-    return db.add_student(data)
+    if db.add_student(data):
+        return {'detail': 'student is added'}
+    raise HTTPException(status_code=403,
+                        detail={'error': 'student is NOT added'})
 
 
 @app.get("/students")
@@ -222,22 +232,28 @@ def get_students(user=Depends(manager)):
 
 @app.get("/students/{id}")
 def get_student(id, user=Depends(manager)):
-    contact = db.get_student_by_id(id)
-    if contact:
-        return contact
+    student = db.get_student_by_id(id)
+    if student:
+        return student
     raise HTTPException(status_code=404,
                         detail={'error': f'no student with id = {id}'})
 
 
-@app.put("/students/{id}")
+@app.patch("/students/{id}")
 def update_student(id, data: Student, user=Depends(manager)):
     if db.update_student(id, data):
-        return data
+        return {'detail': 'student is updated'}
     return {'error': 'student is not updated'}
 
 
 @app.put("/students/{id}/move/{group_id}")
 def move_student(id, group_id, user=Depends(manager)):
+    if not db.get_student_by_id(id):
+        raise HTTPException(status_code=404,
+                            detail={'error': f'no student with id = {id}'})
+    if not db.get_group_by_id(group_id):
+        raise HTTPException(status_code=404,
+                            detail={'error': f'no group with id = {group_id}'})
     if db.add_student_to_group(group_id, id):
         return {'detail': 'student is moved successfully'}
 
@@ -252,7 +268,7 @@ def delete_student(id, user=Depends(manager)):
     return {'detail': 'student is NOT deleted'}
 
 
-# REMINDER todo: delete reminders
+# REMINDER todo: delete reminders and add status DONE
 @app.post("/students/{student_id}/reminders")
 def add_reminder_to_student(student_id, data: Reminder, user=Depends(manager)):
     if db.add_reminder_to_student(student_id, data):
@@ -283,7 +299,7 @@ def get_group(id, user=Depends(manager)):
 @app.put("/groups/{id}")
 def update_group(id, data: Group, user=Depends(manager)):
     if db.update_group(id, data):
-        return data
+        return {'detail': 'group is updated successfully'}
     return {'error': 'group is not updated'}
 
 
